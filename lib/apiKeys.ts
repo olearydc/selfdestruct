@@ -21,6 +21,13 @@ export interface ApiKeyRecord {
   revoked: boolean;
   maxExpiresIn: number;
   rateLimitMax: number;
+  // Team seats (MONETISATION.md): an optional shared id linking several
+  // keys to the same team allocation. Deliberately just a rate-limit
+  // grouping key, nothing else — there is no `team:<id>` record anywhere,
+  // no list of a team's members, and no way to look up "which keys share
+  // this teamId." Adding any of those would recreate the "what did my
+  // team send" audit trail the design explicitly rules out.
+  teamId?: string;
 }
 
 const KEY_PREFIX = "sk_live_";
@@ -43,6 +50,7 @@ export async function issueApiKey(params: {
   note: string;
   maxExpiresIn: number;
   rateLimitMax: number;
+  teamId?: string;
 }): Promise<string> {
   const plaintext = generatePlaintextKey();
   const record: ApiKeyRecord = {
@@ -52,6 +60,7 @@ export async function issueApiKey(params: {
     revoked: false,
     maxExpiresIn: params.maxExpiresIn,
     rateLimitMax: params.rateLimitMax,
+    ...(params.teamId ? { teamId: params.teamId } : {}),
   };
   await redis.set(`apikey:${hashApiKey(plaintext)}`, JSON.stringify(record));
   return plaintext;

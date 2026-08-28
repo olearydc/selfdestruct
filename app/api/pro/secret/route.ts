@@ -41,7 +41,14 @@ export async function POST(request: NextRequest) {
 
   // Bucketed by the key's own hash — never the plaintext, same principle
   // as everywhere else a credential is compared or stored in this project.
-  const rateLimitKey = `ratelimit:pro:${hashApiKey(key)}`;
+  // Team seats (MONETISATION.md) share one pooled bucket instead, keyed by
+  // teamId rather than any individual key — that's the entire mechanism by
+  // which seats "share" anything. It's a rate-limit grouping, not a record
+  // of who created what: the bucket is just a counter with a TTL, nothing
+  // it stores could answer "what did teammate X send."
+  const rateLimitKey = record.teamId
+    ? `ratelimit:pro:team:${record.teamId}`
+    : `ratelimit:pro:${hashApiKey(key)}`;
   const count = await redis.incr(rateLimitKey);
   if (count === 1) {
     await redis.expire(rateLimitKey, RATE_LIMIT_WINDOW_SECONDS);
@@ -49,7 +56,9 @@ export async function POST(request: NextRequest) {
   if (count > record.rateLimitMax) {
     return NextResponse.json(
       {
-        error: `This API key has created ${record.rateLimitMax} secrets in the last hour, which is its current limit.`,
+        error: record.teamId
+          ? `This team has created ${record.rateLimitMax} secrets in the last hour, which is its current shared limit.`
+          : `This API key has created ${record.rateLimitMax} secrets in the last hour, which is its current limit.`,
       },
       { status: 429, headers: NO_STORE_HEADERS },
     );

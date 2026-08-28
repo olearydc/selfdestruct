@@ -25,10 +25,27 @@ function hashApiKey(plaintext) {
   return createHash("sha256").update(plaintext).digest("hex");
 }
 
+function parseArgs(argv) {
+  const args = { _: [] };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--team") args.team = argv[++i];
+    else args._.push(arg);
+  }
+  return args;
+}
+
 async function main() {
-  const note = process.argv[2];
+  const args = parseArgs(process.argv.slice(2));
+  const note = args._[0];
   if (!note) {
-    console.error('Usage: npm run create-api-key -- "customer note (e.g. name/email)"');
+    console.error(
+      'Usage: npm run create-api-key -- "customer note (e.g. name/email)" [--team <teamId>]\n\n' +
+        "--team groups this key into a shared rate-limit pool with any other\n" +
+        "key issued with the same --team value (team seats — see\n" +
+        "docs/MONETISATION.md). Use the same --team value for every seat on\n" +
+        "one team; there is no separate 'create a team' step.",
+    );
     process.exitCode = 1;
     return;
   }
@@ -42,6 +59,7 @@ async function main() {
     revoked: false,
     maxExpiresIn: PRO_MAX_EXPIRES_IN_SECONDS,
     rateLimitMax: PRO_DEFAULT_RATE_LIMIT_MAX,
+    ...(args.team ? { teamId: args.team } : {}),
   };
 
   await redis.set(`apikey:${hashApiKey(plaintext)}`, JSON.stringify(record));
@@ -51,7 +69,8 @@ async function main() {
   console.log(plaintext);
   console.log(`\nNote: ${note}`);
   console.log(`Max expiry: ${PRO_MAX_EXPIRES_IN_SECONDS / 86400} days`);
-  console.log(`Rate limit: ${PRO_DEFAULT_RATE_LIMIT_MAX}/hour`);
+  console.log(`Rate limit: ${PRO_DEFAULT_RATE_LIMIT_MAX}/hour${args.team ? " (shared across team)" : ""}`);
+  if (args.team) console.log(`Team: ${args.team}`);
 }
 
 main();
