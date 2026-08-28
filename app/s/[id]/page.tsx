@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: { absolute: "Selfdestruct — one-time secret" },
   description: "Open a one-time secret link.",
   robots: { index: false, follow: false },
+  // Same reasoning, applied to canonical: without an explicit (empty)
+  // override, this page would inherit the root layout's
+  // `alternates: { canonical: "/" }` and every one-time secret URL would
+  // claim the homepage as its own canonical — false, and pointless on a
+  // noindex page besides.
+  alternates: {},
   // Explicitly overridden, not inherited — openGraph/twitter aren't
   // covered by the title/description overrides above (Next only replaces
   // the specific keys a page sets), so without this a link shared in

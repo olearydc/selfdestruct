@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   title: { absolute: "Using Selfdestruct safely" },
   description: "Plain-language safety steps for using Selfdestruct.",
   robots: { index: false, follow: false },
+  // Explicit empty override, not an omission — Next.js inherits a parent
+  // segment's metadata key wholesale when a page doesn't specify it at
+  // all, so leaving this out would silently inherit the root layout's
+  // `alternates: { canonical: "/" }` and have this page claim the
+  // homepage as its own canonical URL. A noindex page has no canonical
+  // to declare in the first place.
+  alternates: {},
 };
 
 // Required for the per-request CSP nonce set in proxy.ts — see the comment

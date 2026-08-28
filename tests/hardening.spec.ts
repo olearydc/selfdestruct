@@ -40,8 +40,8 @@ test("no third-party requests on the reveal page", async ({ page, context, baseU
   expect(getForeignRequests()).toEqual([]);
 });
 
-test("Content-Security-Policy header present on both pages", async ({ request }) => {
-  for (const path of ["/", "/s/nonexistent"]) {
+test("Content-Security-Policy header present on every proxied page", async ({ request }) => {
+  for (const path of ["/", "/s/nonexistent", "/info", "/safety", "/batch"]) {
     const response = await request.get(path);
     const csp = response.headers()["content-security-policy"];
     expect(csp).toBeTruthy();

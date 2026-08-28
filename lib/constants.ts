@@ -13,6 +13,13 @@ export const MAX_CIPHERTEXT_B64_LENGTH = 140_000;
 // that matters in production.
 export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://selfdestruct.online";
 
+// Single source for the site-wide description — used by app/layout.tsx's
+// metadata (description/openGraph/twitter) and by the homepage's WebSite
+// JSON-LD, so the two can't quietly drift apart. Deliberately no mention of
+// "duress" — see app/layout.tsx for why that matters beyond just this page.
+export const SITE_DESCRIPTION =
+  "Send a secret that disappears the moment it's read. Zero-knowledge, one-time links with no accounts, no tracking, and optional passphrase protection — encrypted in your browser, never readable by the server.";
+
 // Shared between the single-secret composer and the batch composer, so the
 // two pages can never quietly drift apart on what "1 hour" or "7 days"
 // actually means in seconds.

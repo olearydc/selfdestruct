@@ -3,17 +3,18 @@ import type { NextRequest } from "next/server";
 import { isAdminAuthorized } from "@/lib/adminAuth";
 
 // Strict, nonce-based CSP applied to every page. The create/reveal pages
-// need this because they handle plaintext (before encryption, after
-// decryption) — blocking inline scripts and unexpected origins closes off
-// script-injection as a route to exfiltrate the secret. See
-// docs/SECURITY.md § Closing the incidental-copy gap.
+// (and /batch, which runs the same client-side encrypt-before-send path as
+// the create page) need this because they handle plaintext (before
+// encryption, after decryption) — blocking inline scripts and unexpected
+// origins closes off script-injection as a route to exfiltrate the secret.
+// See docs/SECURITY.md § Closing the incidental-copy gap.
 //
 // The info/safety pages don't handle plaintext, but get the same treatment
 // anyway: Next.js injects its own inline hydration scripts/styles on every
 // page regardless of whether the route itself uses any, and those need a
 // nonce to run under a strict CSP — there's no simpler nonce-free variant
 // that still allows client interactivity. A per-request nonce means all
-// four routes must be dynamically rendered (`force-dynamic`), not
+// five routes must be dynamically rendered (`force-dynamic`), not
 // statically optimized; see each page's own file for that export.
 //
 // Cache-Control and Referrer-Policy are set here too, not just
@@ -72,5 +73,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/s/:id", "/info", "/safety", "/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/", "/s/:id", "/info", "/safety", "/batch", "/admin/:path*", "/api/admin/:path*"],
 };

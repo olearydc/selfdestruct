@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { RATE_LIMIT_MAX_CREATES } from "@/lib/constants";
 
 const FAQ_ITEMS = [
@@ -55,9 +56,37 @@ const FAQ_ITEMS = [
   },
 ];
 
-export default function Faq() {
+// Generated straight from FAQ_ITEMS, not maintained as a separate copy, so
+// the structured data can never say something different from what's
+// actually on the page. Note for whoever revisits this: Google restricted
+// FAQPage rich results to a small set of authoritative government/health
+// sites in August 2023, so this won't produce a rich snippet in Google
+// search specifically — it's still accurate, still standard schema.org
+// markup, and other consumers (Bing, general entity/content understanding)
+// don't carry that same restriction.
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ_ITEMS.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+
+export default async function Faq() {
+  // See app/page.tsx's WebSite JSON-LD for why this nonce is required.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(FAQ_JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
       {FAQ_ITEMS.map((item) => (
         <details key={item.q} className="faq-item">
           <summary>{item.q}</summary>

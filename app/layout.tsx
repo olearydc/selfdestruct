@@ -1,13 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { SITE_URL } from "@/lib/constants";
+import { SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 
-// No mention of "duress" here, for the same reason keywords omits it below
-// — this description feeds openGraph/twitter too, and /s/[id] only
+// No mention of "duress" in this description, for the same reason keywords
+// omits it below — this feeds openGraph/twitter too, and /s/[id] only
 // overrides title/description/robots, not those, so it would otherwise
 // leak into that page's og:description and twitter:description as well.
-const DESCRIPTION =
-  "Send a secret that disappears the moment it's read. Zero-knowledge, one-time links with no accounts, no tracking, and optional passphrase protection — encrypted in your browser, never readable by the server.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -15,7 +13,16 @@ export const metadata: Metadata = {
     default: "Selfdestruct — a secret that disappears when read",
     template: "%s · Selfdestruct",
   },
-  description: DESCRIPTION,
+  description: SITE_DESCRIPTION,
+  // Every page that doesn't set its own canonical (currently just this
+  // root layout's own "/" and the /info, /batch overrides) inherits this
+  // one — a page that forgets to override would otherwise silently claim
+  // the homepage as its canonical URL, telling search engines to index it
+  // under the wrong address. /safety and /s/[id] deliberately don't
+  // override this: both are already noindex, and a canonical URL on a
+  // page telling robots not to index it at all is a contradiction, not a
+  // stronger signal.
+  alternates: { canonical: "/" },
   // Deliberately no "duress" here, even though it's a real feature we
   // otherwise talk about openly on /info — this list cascades to every
   // page that doesn't set its own keywords, including /s/[id], and that
@@ -39,13 +46,13 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Selfdestruct",
     title: "Selfdestruct — a secret that disappears when read",
-    description: DESCRIPTION,
+    description: SITE_DESCRIPTION,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "Selfdestruct — a secret that disappears when read",
-    description: DESCRIPTION,
+    description: SITE_DESCRIPTION,
   },
 };
 

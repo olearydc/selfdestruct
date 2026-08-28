@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 
 import Header from "./Header";
 import Footer from "./Footer";
@@ -9,13 +10,42 @@ import ComparisonTable from "./ComparisonTable";
 import HeroIllustration from "./HeroIllustration";
 import TrustBadgeStrip from "./info/TrustBadgeStrip";
 import DataFlowDiagram from "./info/DataFlowDiagram";
+import { SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-export default function CreatePage() {
+// Plain WebSite entity only — no SoftwareApplication/aggregateRating, since
+// this product has no reviews or ratings to report and fabricating one
+// would violate Google's structured-data guidelines (and just be untrue).
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Selfdestruct",
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+};
+
+export default async function CreatePage() {
+  // CSP is strict-dynamic/nonce-based (see proxy.ts) and applies to every
+  // <script> tag regardless of type, including this JSON-LD data island —
+  // without the nonce the browser drops it silently, no error, no schema.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        // JSON.stringify already produces valid embedded JSON; the extra
+        // escape guards only against a literal "</script>" inside a value
+        // ever prematurely closing this tag — schema.org text fields are
+        // free-form strings, not something to trust blindly even when we
+        // wrote them ourselves.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(WEBSITE_JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
       <Header />
       <main className="wide-main">
         <section className="hero-section">

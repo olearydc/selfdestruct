@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   title: { absolute: "Send the same secret to several people — Selfdestruct" },
   description:
     "Type one message and get back several separate one-time links to hand out — each one is still its own zero-knowledge secret, opened and destroyed independently of the others.",
+  // See app/info/page.tsx's comment — explicit for the same reason.
+  alternates: { canonical: "/batch" },
 };
 
 // Required for the per-request CSP nonce set in proxy.ts — see the comment

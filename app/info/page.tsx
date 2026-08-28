@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: { absolute: "How Selfdestruct works" },
   description:
     "A zero-knowledge, one-time secret-sharing tool. Here's exactly how the encryption, the one-time link, and the auto-destruct actually work.",
+  // Explicit, not inherited — the root layout's canonical is "/", and
+  // Next.js only replaces the specific metadata keys a page sets, so
+  // leaving this out would silently claim the homepage as this page's
+  // canonical URL instead of itself.
+  alternates: { canonical: "/info" },
 };
 
 // Required for the per-request CSP nonce set in proxy.ts — see the comment
