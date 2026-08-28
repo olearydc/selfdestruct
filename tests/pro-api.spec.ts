@@ -146,6 +146,107 @@ test("a Pro-created secret reveals and burns through the same endpoints as a fre
   expect(secondVisit.status()).toBe(404);
 });
 
+test("a custom slug without a passphrase is rejected", async ({ request }) => {
+  const redis = new Redis(process.env.REDIS_URL as string);
+  const key = await issueTestKey(redis);
+  await redis.quit();
+
+  const response = await request.post("/api/pro/secret", {
+    headers: { Authorization: `Bearer ${key}` },
+    data: {
+      ciphertext: "abc",
+      iv: "def",
+      expiresIn: 300,
+      slug: `vanity-${Date.now()}`,
+    },
+  });
+  expect(response.status()).toBe(400);
+  const body = await response.json();
+  expect(body.error).toMatch(/passphrase/i);
+});
+
+test("a malformed slug is rejected even with a passphrase", async ({ request }) => {
+  const redis = new Redis(process.env.REDIS_URL as string);
+  const key = await issueTestKey(redis);
+  await redis.quit();
+
+  const response = await request.post("/api/pro/secret", {
+    headers: { Authorization: `Bearer ${key}` },
+    data: {
+      ciphertext: "abc",
+      iv: "def",
+      expiresIn: 300,
+      passphraseHash: "somehash",
+      slug: "not a valid slug!!",
+    },
+  });
+  expect(response.status()).toBe(400);
+  const body = await response.json();
+  expect(body.error).toMatch(/slug/i);
+});
+
+test("a custom slug with a passphrase creates a secret at that exact link", async ({
+  request,
+}) => {
+  const redis = new Redis(process.env.REDIS_URL as string);
+  const key = await issueTestKey(redis);
+  await redis.quit();
+
+  const slug = `vanity-${Date.now()}`;
+  const response = await request.post("/api/pro/secret", {
+    headers: { Authorization: `Bearer ${key}` },
+    data: {
+      ciphertext: "abc",
+      iv: "def",
+      expiresIn: 300,
+      passphraseHash: "somehash",
+      slug,
+    },
+  });
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body.id).toBe(slug);
+});
+
+test("a slug that's already in use is rejected, not silently overwritten", async ({
+  request,
+}) => {
+  const redis = new Redis(process.env.REDIS_URL as string);
+  const key = await issueTestKey(redis);
+  await redis.quit();
+
+  const slug = `vanity-collision-${Date.now()}`;
+  const payload = {
+    ciphertext: "abc",
+    iv: "def",
+    expiresIn: 300,
+    passphraseHash: "somehash",
+    slug,
+  };
+
+  const first = await request.post("/api/pro/secret", {
+    headers: { Authorization: `Bearer ${key}` },
+    data: payload,
+  });
+  expect(first.status()).toBe(200);
+
+  // A second request for the same slug — must not overwrite the first
+  // secret still live under it (see the NX flag in the route).
+  const second = await request.post("/api/pro/secret", {
+    headers: { Authorization: `Bearer ${key}` },
+    data: { ...payload, ciphertext: "different-ciphertext" },
+  });
+  expect(second.status()).toBe(409);
+
+  // Confirm the original secret is genuinely intact, not overwritten.
+  const check = await request.post(`/api/secret/${slug}`, {
+    data: { passphraseHash: "somehash" },
+  });
+  expect(check.status()).toBe(200);
+  const checkBody = await check.json();
+  expect(checkBody.ciphertext).toBe("abc");
+});
+
 test("a Pro-created secret with a duress passphrase behaves identically to a free one", async ({
   page,
   request,

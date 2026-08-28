@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { hashApiKey, lookupApiKey } from "@/lib/apiKeys";
-import { validateSecretPayload } from "@/lib/secretValidation";
+import { validateSecretPayload, validateSlug } from "@/lib/secretValidation";
 
 const MIN_EXPIRES_IN = 60; // 1 minute — same floor as the free tier
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -62,7 +62,33 @@ export async function POST(request: NextRequest) {
   }
   const { ciphertext, iv, expiresIn, passphraseHash, duress } = result.payload;
 
-  const id = randomBytes(16).toString("base64url");
+  // Branded/vanity short link (see MONETISATION.md): an optional custom
+  // slug in place of the random id. Requires a passphrase on the same
+  // request — see validateSlug's own comment in lib/secretValidation.ts
+  // for why that isn't optional, security-wise, once the id is guessable.
+  const { slug } = (body ?? {}) as Record<string, unknown>;
+  let id: string;
+  if (slug !== undefined) {
+    if (!passphraseHash) {
+      return NextResponse.json(
+        {
+          error:
+            "A custom slug requires a passphrase on the same request — without one, a guessable slug could let someone else burn the secret before your recipient opens it.",
+        },
+        { status: 400, headers: NO_STORE_HEADERS },
+      );
+    }
+    const slugResult = validateSlug(slug);
+    if (!slugResult.ok) {
+      return NextResponse.json(
+        { error: slugResult.error },
+        { status: slugResult.status, headers: NO_STORE_HEADERS },
+      );
+    }
+    id = slugResult.slug;
+  } else {
+    id = randomBytes(16).toString("base64url");
+  }
 
   // Same `secret:<id>` key schema as the free tier — this must stay one
   // code path, not a parallel implementation, so Pro-created secrets get
@@ -72,7 +98,16 @@ export async function POST(request: NextRequest) {
   if (passphraseHash) stored.passphraseHash = passphraseHash;
   if (duress) stored.duress = duress;
 
-  await redis.set(`secret:${id}`, JSON.stringify(stored), "EX", expiresIn);
+  // NX: a custom slug could collide with another live secret (random ids
+  // are astronomically unlikely to, but a chosen slug genuinely can) —
+  // fail the request rather than silently overwrite someone else's secret.
+  const setResult = await redis.set(`secret:${id}`, JSON.stringify(stored), "EX", expiresIn, "NX");
+  if (setResult === null) {
+    return NextResponse.json(
+      { error: "This slug is already in use. Try a different one." },
+      { status: 409, headers: NO_STORE_HEADERS },
+    );
+  }
   await redis.incr("stats:secrets_created");
 
   return NextResponse.json({ id }, { headers: NO_STORE_HEADERS });
