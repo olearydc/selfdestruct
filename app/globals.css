@@ -1,0 +1,1489 @@
+:root {
+  --background: #ffffff;
+  --surface: #f7f5f2;
+  --foreground: #1a1614;
+  --muted: #706a63;
+  --border: #e4ddd4;
+  /* One warm accent shared by both themes — see docs/UX.md § Theming: two
+     backgrounds, not two brand tones. Darkened from the original #d9622b,
+     which measured 3.66:1 against white — below WCAG AA's 4.5:1 for normal
+     text — for both accent-colored link text and white-on-accent button
+     text. #b3541f measures ~5.0:1 in both directions. */
+  --accent: #b3541f;
+  --accent-foreground: #ffffff;
+  --danger: #b3261e;
+  /* Faint accent-tinted fill for diagram boxes that need to read as
+     "the highlighted path" without relying on stroke color alone —
+     kept well below AA text-contrast requirements since it only ever
+     sits behind text colored with --foreground or --accent, never used
+     as a text color itself. */
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #14100d;
+    --surface: #1c1713;
+    --foreground: #f3ede6;
+    --muted: #a89e93;
+    --border: #33291f;
+    --accent: #e8874a;
+    --accent-foreground: #14100d;
+    --danger: #ff6b60;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color-scheme: dark;
+  }
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+textarea,
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  /* --background (pure white), not --surface (the pale card tone) — the
+     passphrase fields previously used --surface, which read as a subtly
+     different, almost-disabled-looking shade next to the main secret
+     textarea's white. */
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  resize: vertical;
+}
+
+textarea {
+  min-height: 8rem;
+}
+
+textarea:focus,
+input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1.25rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 600;
+  box-shadow: 0 2px 10px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-secondary:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pill-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pill:hover {
+  border-color: var(--accent);
+}
+
+.pill[aria-pressed="true"] {
+  /* Plain --surface, not a tinted background — a tinted version measured
+     3.93:1 for accent text, below WCAG AA's 4.5:1. --surface is the same
+     background already verified safe for accent text elsewhere. */
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  transform: translateY(-1px);
+}
+
+.card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 0.9rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.35);
+  animation: rise-in 0.25s ease;
+}
+
+/* Opacity deliberately not animated here — a card mid-fade briefly blends
+   its background toward the page background behind it, which dropped text
+   contrast below WCAG AA for the instant axe's scan could catch it. */
+@keyframes rise-in {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+  button,
+  .pill {
+    transition: none;
+  }
+  .hero-illustration-glow,
+  .hero-illustration-button,
+  .hero-illustration-ring,
+  .hero-illustration-poof,
+  .hero-illustration-char,
+  .hero-illustration-notch-1,
+  .hero-illustration-notch-2,
+  .hero-illustration-notch-3,
+  .hero-illustration-notch-4 {
+    animation: none;
+  }
+  .hero-illustration-poof,
+  .hero-illustration-char {
+    opacity: 0;
+  }
+}
+
+/* Home page — hero, marketing sections, footer */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+}
+
+.hero-copy {
+  flex: 0 1 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero-headline {
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.35rem);
+  line-height: 1.25;
+}
+
+.accent-text {
+  color: var(--accent);
+}
+
+.hero-subhead {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.form-column {
+  max-width: 34rem;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.composer-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.35);
+}
+
+.composer-textarea {
+  width: 100%;
+  min-height: 9rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  /* Slightly below the inherited 1rem body size — at full size, the
+     placeholder read as the single largest, loudest text in the whole
+     composer, next to captions running as small as 0.74rem. */
+  font-size: 0.92rem;
+  resize: vertical;
+}
+
+.composer-textarea::placeholder {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.composer-textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Section headings/intros on the home page's marketing sections only — not
+   applied to the shared .page-section class itself, so /info and /safety
+   (which reuse it for very different content) are unaffected. */
+.section-intro {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.section-intro p {
+  max-width: 34rem;
+}
+
+.section-intro-text {
+  text-align: center;
+}
+
+.composer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: -0.5rem;
+}
+
+.pill-static {
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Horizontal rows — a label+description on the left, controls on the
+   right, divided by rules — replacing an earlier stacked layout that
+   read as cluttered once both rows had captions under them. */
+.composer-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.composer-rows > .composer-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.composer-row-nested {
+  border-top: 1px dashed var(--border);
+}
+
+.composer-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1 1 14rem;
+}
+
+.composer-row-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.composer-row-desc {
+  font-size: 0.74rem;
+  line-height: 1.45;
+  max-width: 26rem;
+}
+
+.composer-row-options {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+}
+
+.composer-diagram-caption {
+  font-size: 0.78rem;
+}
+
+.composer-expanded {
+  border-top: 1px dashed var(--border);
+  padding-top: 0.9rem;
+}
+
+.composer-submit {
+  align-self: flex-start;
+  font-size: 1rem;
+}
+
+.composer-submit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Real on/off switch (see ToggleSwitch in CreatePageClient.tsx) — a
+   pill-button toggle here tested fine but visually read as a text field
+   to a first-time user. The input is stretched to cover the whole label
+   (not just the track) rather than shrunk to 1x1px — a too-small hidden
+   input left the visible track/thumb stacked on top of it, intercepting
+   clicks aimed at the actual checkbox. */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.toggle-switch-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  /* .toggle-switch-track is also position:relative (needed so the thumb
+     can anchor to it) — without an explicit z-index here, DOM order alone
+     decides which positioned sibling paints on top, and the track (later
+     in the markup) was winning and physically blocking clicks aimed at
+     this input. */
+  z-index: 1;
+}
+
+.toggle-switch-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  flex: none;
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.toggle-switch-input:checked + .toggle-switch-track {
+  background: var(--accent);
+}
+
+.toggle-switch-input:checked + .toggle-switch-track .toggle-switch-thumb {
+  transform: translateX(1.25rem);
+}
+
+.toggle-switch-input:focus-visible + .toggle-switch-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.toggle-switch-state {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-width: 1.6rem;
+}
+
+.feature-grid,
+.usecase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.feature-card,
+.usecase-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 0.9rem;
+  padding: 1.1rem;
+}
+
+.usecase-card {
+  border-top: 3px solid var(--accent);
+}
+
+.feature-card h3,
+.usecase-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.feature-card p,
+.usecase-card p {
+  margin: 0;
+}
+
+.compare-table-marks .compare-table-highlight {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.compare-table-marks th.compare-table-highlight {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.compare-mark {
+  font-weight: 700;
+}
+
+.compare-mark-yes {
+  color: var(--foreground);
+}
+
+.compare-mark-no {
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+.compare-mark-partial {
+  color: var(--muted);
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: auto;
+}
+
+.site-footer-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.site-footer-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.site-footer-nav a {
+  font-size: 0.85rem;
+}
+
+.hero-illustration {
+  width: 9.5rem;
+  height: 9.5rem;
+  flex: none;
+}
+
+.hero-illustration-glow {
+  fill: color-mix(in srgb, var(--accent) 18%, transparent);
+  transform-origin: center;
+  animation: glow-pulse 10s ease-in-out infinite;
+}
+
+.hero-illustration-ring-track {
+  stroke: var(--border);
+}
+
+.hero-illustration-ring {
+  stroke: var(--accent);
+  animation: ring-drain 10s linear infinite;
+}
+
+.hero-illustration-button {
+  transform-origin: center;
+  animation: button-vanish 10s ease-in infinite;
+}
+
+/* Quarter marks, muted at rest, each briefly flashing brighter then
+   actually disappearing (not just dimming) as the ring's own sweep
+   reaches it — a discrete "4, 3, 2, 1" alongside the continuous drain.
+   Timed to the same quarter-points as the ring's sweep (which fully
+   drains at 88% of the cycle, not 100% — see ring-drain below).
+
+   The growing gap's leading edge moves clockwise from the top, but the
+   shrinking solid arc's visible tip — the part actually easy to track by
+   eye — recedes back toward the top from the West side, which reads as
+   anticlockwise. Matched the notch order to that visible motion rather
+   than the abstract gap direction: West first (~22%), then South (~44%),
+   then East (~66%), and the Top last, at full completion (~88%).
+   notch-1/2/3/4 are the Top/Right/Bottom/Left elements in the JSX, so
+   their animation-to-keyframe mapping below is deliberately NOT 1-4 in
+   order — it follows the visible sweep's order, not the elements'. */
+.hero-illustration-notch {
+  fill: var(--border);
+}
+
+.hero-illustration-notch-1 { animation: notch-flash-4 10s linear infinite; } /* Top — last */
+.hero-illustration-notch-2 { animation: notch-flash-3 10s linear infinite; } /* Right — third */
+.hero-illustration-notch-3 { animation: notch-flash-2 10s linear infinite; } /* Bottom — second */
+.hero-illustration-notch-4 { animation: notch-flash-1 10s linear infinite; } /* Left — first */
+
+/* Color/opacity only — deliberately no transform. An earlier version
+   scaled each notch up during its flash; verified via computed transform
+   matrices (pure scale, zero translation, on all four) that none of them
+   were actually moving, but a small dot changing size right next to the
+   simultaneously-draining ring was reading as motion anyway — a classic
+   induced-motion illusion. Removing the geometry change entirely removes
+   the trigger for it. */
+@keyframes notch-flash-1 {
+  0%, 16% { fill: var(--border); opacity: 1; }
+  22% { fill: var(--accent); opacity: 1; }
+  32%, 100% { opacity: 0; }
+}
+
+@keyframes notch-flash-2 {
+  0%, 38% { fill: var(--border); opacity: 1; }
+  44% { fill: var(--accent); opacity: 1; }
+  54%, 100% { opacity: 0; }
+}
+
+@keyframes notch-flash-3 {
+  0%, 60% { fill: var(--border); opacity: 1; }
+  66% { fill: var(--accent); opacity: 1; }
+  76%, 100% { opacity: 0; }
+}
+
+@keyframes notch-flash-4 {
+  0%, 82% { fill: var(--border); opacity: 1; }
+  88% { fill: var(--accent); opacity: 1; }
+  98%, 100% { opacity: 0; }
+}
+
+/* Four words drifting straight inward and shrinking as they approach the
+   button's center — a "pulled in and receding into the distance" effect.
+   All four anchor at the button's own center (see the JSX). Deliberately
+   just two real transform stops (0%/100%) per word, linear throughout —
+   an earlier multi-waypoint spiral version kept reading as jerky no
+   matter how the easing or waypoint spacing was tuned; a single straight
+   vector leaves nothing for the timing function to stumble over. They
+   ride along inside .hero-illustration-button so they vanish and reset
+   together with it rather than needing separate timing to stay in sync. */
+.hero-illustration-char {
+  opacity: 0;
+}
+
+.hero-illustration-char-1 { animation: drift-in-1 2.4s linear infinite; }
+.hero-illustration-char-2 { animation: drift-in-2 2.4s linear infinite; animation-delay: 0.6s; }
+.hero-illustration-char-3 { animation: drift-in-3 2.4s linear infinite; animation-delay: 1.2s; }
+.hero-illustration-char-4 { animation: drift-in-4 2.4s linear infinite; animation-delay: 1.8s; }
+
+@keyframes drift-in-1 {
+  0% { opacity: 0; transform: translate(85px, 85px) scale(1); }
+  15% { opacity: 0.9; }
+  80% { opacity: 0.35; }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.25); }
+}
+
+@keyframes drift-in-2 {
+  0% { opacity: 0; transform: translate(-85px, 85px) scale(1); }
+  15% { opacity: 0.9; }
+  80% { opacity: 0.35; }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.25); }
+}
+
+@keyframes drift-in-3 {
+  0% { opacity: 0; transform: translate(-85px, -85px) scale(1); }
+  15% { opacity: 0.9; }
+  80% { opacity: 0.35; }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.25); }
+}
+
+@keyframes drift-in-4 {
+  0% { opacity: 0; transform: translate(85px, -85px) scale(1); }
+  15% { opacity: 0.9; }
+  80% { opacity: 0.35; }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.25); }
+}
+
+.hero-illustration-poof {
+  opacity: 0;
+  transform-origin: center;
+  animation: poof 10s ease-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%,
+  15% {
+    opacity: 0.7;
+  }
+  92%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Countdown ring drains clockwise over the cycle, then instantly resets
+   full as the loop restarts. */
+@keyframes ring-drain {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  88%,
+  100% {
+    stroke-dashoffset: 578;
+  }
+}
+
+/* Appears slowly (~1.8s, 0–18%) rather than snapping instantly into place
+   at the loop restart — that instant pop read as jarring next to the
+   deliberate, steady vanish. Holds fully steady well past the point the
+   ring finishes draining (88%), with a visible pause before it vanishes
+   — "poof, it's gone" — so the ring completing and the button
+   disappearing don't read as the same instant. */
+@keyframes button-vanish {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  95% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  98% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes poof {
+  0%,
+  95% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  97% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+  99.5%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (max-width: 40rem) {
+  .hero-section {
+    text-align: center;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .hero-illustration {
+    width: 8rem;
+    height: 8rem;
+  }
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.copy-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Long generated secret links need to break anywhere to avoid overflowing
+   the card — ordinary nav/prose links don't, and shouldn't (this used to
+   be a global `a` rule and was breaking short link text mid-word). Smaller
+   than body text, too — nobody reads a base64 key fragment, it's only
+   ever there to be copied, so it doesn't need to compete for attention at
+   full size. */
+.copy-row a {
+  word-break: break-all;
+  font-size: 0.82rem;
+}
+
+.count-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.count-stepper button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.count-stepper-value {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.batch-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.batch-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--background);
+  max-height: 8rem;
+  overflow: hidden;
+  opacity: 1;
+  transform: scale(1);
+  /* 300ms, matching POOF_DURATION_MS in BatchPageClient.tsx — a copied
+     link has done its job, so it clears itself out of the way instead of
+     sitting there as one more thing to track by eye mid-meeting. */
+  transition: max-height 0.3s ease, opacity 0.25s ease, transform 0.25s ease, padding 0.3s ease,
+    border-width 0.3s ease, margin 0.3s ease;
+}
+
+.batch-result-poofing {
+  opacity: 0;
+  transform: scale(0.92);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: -0.6rem;
+  border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .batch-result {
+    transition: none;
+  }
+}
+
+.batch-result-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: help;
+}
+
+.revealed-secret {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--border);
+  background: var(--background);
+  border-radius: 0.6rem;
+  padding: 0.9rem;
+}
+
+/* Site header — create, info, and reveal pages, see app/Header.tsx */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(6px);
+}
+
+.site-header-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 1.05rem;
+}
+
+.brand-mark {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.site-nav a {
+  font-size: 0.9rem;
+}
+
+.quick-exit-compact {
+  color: var(--danger);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.82rem;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  white-space: nowrap;
+}
+
+.quick-exit-compact:hover,
+.quick-exit-compact:focus-visible {
+  background: var(--danger);
+  color: #ffffff;
+  outline: none;
+}
+
+/* Info & safety pages (Phase 5) — these use a wider main than the
+   34rem create/reveal flow, so they opt out of the shared max-width. */
+.wide-main {
+  max-width: 42rem;
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.page-section:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.headline {
+  font-size: 1.6rem;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* The badge strip auto-scrolls slowly rather than requiring a manual
+   swipe — the list is duplicated once in the markup (second copy
+   aria-hidden, see TrustBadgeStrip.tsx) so translating by exactly -50%
+   loops seamlessly back to an identical starting frame. */
+.badge-strip-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+}
+
+/* Under reduced motion the strip stops moving (badge-scroll below is
+   disabled), which leaves the first badge sitting permanently at x=0 —
+   right inside the mask's own fade-out zone, genuinely reducing that
+   badge's contrast for as long as the page is open (not just a fleeting
+   animation frame; caught by an accessibility scan run with
+   prefers-reduced-motion emulated). The fade only earns its keep while
+   things are actually moving, so drop it entirely when they're not. */
+@media (prefers-reduced-motion: reduce) {
+  .badge-strip-viewport {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+.badge-strip {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  width: max-content;
+  animation: badge-scroll 26s linear infinite;
+}
+
+@keyframes badge-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-strip {
+    animation: none;
+  }
+}
+
+.badge {
+  flex: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transform-origin: center;
+}
+
+/* Triggered by TrustBadgeStrip.tsx watching each badge's actual on-screen
+   position — a quick outward "blow up" burst, then gone, then a fast
+   reset ready for its next lap. Runs once per class toggle (not
+   infinite/looping) exactly when the badge's center crosses the
+   viewport's left edge, so it stays pinned to that spot regardless of
+   how wide any given badge is — badges vary a lot in width ("100% free"
+   vs "Passphrase protection"), so a purely time-based guess at when
+   each one reaches the edge drifted out of sync with reality; watching
+   position directly doesn't have that problem.
+
+   Peak scale is modest (1.15, not larger) on purpose: flex siblings
+   don't make room for a scaled-up element, so a bigger burst visually
+   overlapped the *next* badge in line — when the bursting one then
+   faded out, that overlapped neighbor (which had been there untouched
+   the whole time) was revealed, reading as something reappearing from
+   behind rather than a clean single self-destruct.
+
+   transform/opacity/filter only — deliberately no letter-spacing. An
+   earlier version animated letter-spacing for a "breaking apart" look,
+   but that changes each badge's rendered width every frame, which
+   reflows the whole flex row while it's also being translated by the
+   parent's scroll — the combination read as stutter, not a break-up
+   effect. transform and filter are compositor-only and don't affect
+   layout, so the row's widths stay fixed and the scroll stays smooth.
+
+   Ends hidden (100% keyframe, held via forwards) rather than snapping
+   back to normal — an earlier version reset to opacity 1 the instant the
+   animation finished, which happened while the badge was still near the
+   edge, reading as it flickering back into view for a moment before
+   really disappearing. TrustBadgeStrip.tsx waits until the badge has
+   scrolled well clear before removing this class and resetting it for
+   its next lap, so that reset happens off-screen, unseen. */
+.badge-burst {
+  animation: badge-dissolve 1.6s ease-out forwards;
+}
+
+@keyframes badge-dissolve {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  45% {
+    opacity: 0.8;
+    filter: blur(1px);
+    transform: scale(1.15);
+  }
+  75% {
+    opacity: 0;
+    filter: blur(3px);
+    transform: scale(1.3);
+  }
+  100% {
+    /* Scale back to 1 here, not smaller — TrustBadgeStrip.tsx reads this
+       element's real getBoundingClientRect() to decide when it's fully
+       scrolled clear before resetting it, and a shrunk box at this final
+       held state under-reported the badge's true width, making that
+       check fire early (while a real, unscaled sliver was still
+       showing). Opacity 0 alone already hides it; no need to shrink it
+       too. */
+    opacity: 0;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+.diagram {
+  width: 100%;
+  height: auto;
+}
+
+/* DataFlowDiagram's moving parts — see that component for why transform
+   is used instead of animating cx/the path's own geometry directly. */
+.dataflow-packet {
+  animation: dataflow-packet-flow 4s linear infinite;
+}
+
+@keyframes dataflow-packet-flow {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  33% {
+    transform: translateX(85px);
+    opacity: 1;
+  }
+  38% {
+    transform: translateX(85px);
+    opacity: 0;
+  }
+  62% {
+    transform: translateX(235px);
+    opacity: 0;
+  }
+  67% {
+    transform: translateX(235px);
+    opacity: 1;
+  }
+  95% {
+    transform: translateX(320px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(320px);
+    opacity: 0;
+  }
+}
+
+/* Dashes crawl along the curve in the direction of travel — sender to
+   recipient — so the key reads as actually moving, not just a static
+   dashed line. -20 is two full cycles of the "6 4" dash pattern (sum 10),
+   which keeps the loop seamless. */
+.dataflow-key-path {
+  animation: dataflow-key-flow 1.2s linear infinite;
+}
+
+@keyframes dataflow-key-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dataflow-packet,
+  .dataflow-key-path {
+    animation: none;
+  }
+}
+
+/* LifecycleDiagram's moving parts — see that component for the 495px
+   travel distance (must match its 165px-per-stage-gap spacing). The
+   packet now pauses at each node instead of sweeping straight across —
+   the first version moved continuously start-to-end, which both read as
+   too fast and made it look like it was cutting through the circles
+   rather than visiting each one. */
+.lifecycle-packet {
+  animation: lifecycle-packet-flow 9s ease-in-out infinite;
+}
+
+@keyframes lifecycle-packet-flow {
+  0%,
+  10% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  22%,
+  35% {
+    transform: translateX(165px);
+    opacity: 1;
+  }
+  47%,
+  60% {
+    transform: translateX(330px);
+    opacity: 1;
+  }
+  72%,
+  88% {
+    transform: translateX(495px);
+    opacity: 1;
+  }
+  94% {
+    transform: translateX(495px);
+    opacity: 0;
+  }
+  100% {
+    /* Jumps back to the start while invisible (opacity already 0 by
+       94%) — no visible teleport. */
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+/* A quiet expanding ring on the "Destroyed" node, timed to fire right as
+   the packet above arrives there and holds (72%–88% of the same 9s
+   cycle) — reads as "this is where it ends," in sync with the thing that
+   actually just arrived. */
+.lifecycle-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lifecycle-pulse-ring 9s ease-out infinite;
+}
+
+@keyframes lifecycle-pulse-ring {
+  0%,
+  71% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  76% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  88% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifecycle-packet,
+  .lifecycle-pulse {
+    animation: none;
+  }
+}
+
+.stepper {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.stepper button {
+  flex: 1 1 auto;
+  min-width: 6rem;
+}
+
+.stepper .pill[aria-selected="true"] {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.stepper-detail {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 0.9rem;
+  padding: 1.1rem;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.compare-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.list-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list-check li {
+  padding-left: 1.4rem;
+  position: relative;
+}
+
+.list-check li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.2rem 0.9rem;
+  background: var(--surface);
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.7rem 0;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item summary::before {
+  content: "+ ";
+  color: var(--accent);
+}
+
+.faq-item[open] summary::before {
+  content: "\2212 ";
+}
+
+.faq-item p {
+  margin: 0 0 0.9rem;
+  color: var(--muted);
+}
+
+.canary {
+  border: 1px dashed var(--border);
+  border-radius: 0.9rem;
+  padding: 1.1rem;
+  font-size: 0.9rem;
+}
+
+/* Safety page (docs/AUDIENCE.md § The dedicated safety page) */
+.quick-exit {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: var(--danger);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 1rem;
+  border-radius: 0.6rem;
+  text-decoration: none;
+}
+
+.quick-exit:focus,
+.quick-exit:hover {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+/* Applied by QuickExit.tsx in its last WARNING_SECONDS before the
+   inactivity auto-exit fires. animation-duration is set inline per
+   render (faster as time runs out) — this rule only supplies the shape
+   of one cycle. Small opacity dip, not a color/size change: needs to
+   read as ambient motion on a glance, not as a visible alarm. */
+.quick-exit-urgent {
+  animation: quick-exit-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes quick-exit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-exit-urgent {
+    animation: none;
+  }
+}
+
+.step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  counter-reset: step;
+}
+
+.step-list li {
+  counter-increment: step;
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.step-list li::before {
+  content: counter(step);
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.limitations-box {
+  border: 1px solid var(--danger);
+  border-radius: 0.9rem;
+  padding: 1.1rem;
+  background: var(--surface);
+}
+
+.limitations-box h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
