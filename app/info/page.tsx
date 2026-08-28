@@ -9,6 +9,7 @@ import PassphraseDiagram from "./PassphraseDiagram";
 import DuressDiagram from "./DuressDiagram";
 import MissionBriefing from "./MissionBriefing";
 import Faq from "./Faq";
+import { SUPPORTER_KOFI_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   // absolute — this title already names the brand, so the root layout's
@@ -205,6 +206,18 @@ export default function InfoPage() {
           </p>
           <p>
             <a href="https://github.com/olearydc/selfdestruct">github.com/olearydc/selfdestruct</a>
+          </p>
+        </section>
+
+        <section className="page-section">
+          <h2>Support this project</h2>
+          <p className="muted">
+            Selfdestruct is free, always, for everyone — every security property on this page
+            included. If it&apos;s been useful to you and you&apos;d like to help cover hosting
+            costs, you can{" "}
+            <a href={SUPPORTER_KOFI_URL}>leave a small contribution on Ko-fi</a>. It&apos;s
+            entirely optional and doesn&apos;t unlock or change anything — just a thank-you that
+            helps keep the lights on.
           </p>
         </section>
 

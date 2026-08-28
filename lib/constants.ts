@@ -46,3 +46,8 @@ export const RATE_LIMIT_MAX_CREATES = 50;
 // an extensionless TS import correctly outside the Next.js build).
 export const PRO_MAX_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days
 export const PRO_DEFAULT_RATE_LIMIT_MAX = 500; // per hour
+
+// Supporter tier (MONETISATION.md) — a low-cost, non-feature-gated
+// donation, deliberately separate from Pro. Ko-fi, not our own billing:
+// nothing in this app reads or writes any state related to it.
+export const SUPPORTER_KOFI_URL = "https://ko-fi.com/olearydc";
