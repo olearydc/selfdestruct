@@ -1,7 +1,8 @@
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
-import { MAX_CIPHERTEXT_B64_LENGTH, RATE_LIMIT_MAX_CREATES } from "@/lib/constants";
+import { RATE_LIMIT_MAX_CREATES } from "@/lib/constants";
+import { validateSecretPayload } from "@/lib/secretValidation";
 
 const MIN_EXPIRES_IN = 60; // 1 minute
 const MAX_EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
@@ -21,10 +22,6 @@ const NO_STORE_HEADERS = { "Cache-Control": "no-store", "Referrer-Policy": "no-r
 // hand-typed one that could quietly drift out of sync with it.
 const RATE_LIMIT_COOKIE = "sd_rl";
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60; // 1 hour
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
-}
 
 export async function POST(request: NextRequest) {
   let rateLimitToken = request.cookies.get(RATE_LIMIT_COOKIE)?.value;
@@ -62,91 +59,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json();
-  const { ciphertext, iv, expiresIn, passphraseHash, duress } = body ?? {};
-
-  if (!isNonEmptyString(ciphertext) || !isNonEmptyString(iv)) {
+  const body = await request.json().catch(() => null);
+  const result = validateSecretPayload(body, MIN_EXPIRES_IN, MAX_EXPIRES_IN);
+  if (!result.ok) {
     return withRateLimitCookie(
-      NextResponse.json(
-        { error: "ciphertext and iv are required strings" },
-        { status: 400, headers: NO_STORE_HEADERS },
-      ),
+      NextResponse.json({ error: result.error }, { status: result.status, headers: NO_STORE_HEADERS }),
     );
   }
-
-  if (ciphertext.length > MAX_CIPHERTEXT_B64_LENGTH) {
-    return withRateLimitCookie(
-      NextResponse.json(
-        { error: "Payload too large." },
-        { status: 400, headers: NO_STORE_HEADERS },
-      ),
-    );
-  }
-
-  if (
-    typeof expiresIn !== "number" ||
-    !Number.isInteger(expiresIn) ||
-    expiresIn < MIN_EXPIRES_IN ||
-    expiresIn > MAX_EXPIRES_IN
-  ) {
-    return withRateLimitCookie(
-      NextResponse.json(
-        { error: `expiresIn must be an integer between ${MIN_EXPIRES_IN} and ${MAX_EXPIRES_IN}` },
-        { status: 400, headers: NO_STORE_HEADERS },
-      ),
-    );
-  }
-
-  if (passphraseHash !== undefined && !isNonEmptyString(passphraseHash)) {
-    return withRateLimitCookie(
-      NextResponse.json(
-        { error: "passphraseHash must be a non-empty string when provided" },
-        { status: 400, headers: NO_STORE_HEADERS },
-      ),
-    );
-  }
-
-  // Duress only makes sense once a real passphrase exists: the reveal page
-  // has exactly one passphrase field, so without a real passphrase there is
-  // nothing for the duress passphrase to be a *different* answer to.
-  if (duress !== undefined) {
-    if (!isNonEmptyString(passphraseHash)) {
-      return withRateLimitCookie(
-        NextResponse.json(
-          { error: "duress requires passphraseHash to also be set" },
-          { status: 400, headers: NO_STORE_HEADERS },
-        ),
-      );
-    }
-    if (
-      !isNonEmptyString(duress.ciphertext) ||
-      !isNonEmptyString(duress.iv) ||
-      !isNonEmptyString(duress.passphraseHash)
-    ) {
-      return withRateLimitCookie(
-        NextResponse.json(
-          { error: "duress.ciphertext, duress.iv, and duress.passphraseHash are required" },
-          { status: 400, headers: NO_STORE_HEADERS },
-        ),
-      );
-    }
-    if (duress.ciphertext.length > MAX_CIPHERTEXT_B64_LENGTH) {
-      return withRateLimitCookie(
-        NextResponse.json(
-          { error: "Payload too large." },
-          { status: 400, headers: NO_STORE_HEADERS },
-        ),
-      );
-    }
-    if (duress.passphraseHash === passphraseHash) {
-      return withRateLimitCookie(
-        NextResponse.json(
-          { error: "duress passphrase must differ from the real passphrase" },
-          { status: 400, headers: NO_STORE_HEADERS },
-        ),
-      );
-    }
-  }
+  const { ciphertext, iv, expiresIn, passphraseHash, duress } = result.payload;
 
   const id = randomBytes(16).toString("base64url");
 

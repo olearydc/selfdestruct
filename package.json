@@ -12,7 +12,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "create-api-key": "node scripts/create-api-key.mjs",
+    "revoke-api-key": "node scripts/revoke-api-key.mjs"
   },
   "dependencies": {
     "ioredis": "^6.0.0",

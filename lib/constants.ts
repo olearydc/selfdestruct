@@ -36,3 +36,13 @@ export const BATCH_MAX_ITEMS = 15;
 // page's own explanatory copy — can state the real number instead of a
 // second, hand-typed one that could quietly drift out of sync with it.
 export const RATE_LIMIT_MAX_CREATES = 50;
+
+// Pro tier (Phase 8, see docs/phases/phase-8-pro-tier.md) — the values a
+// manually-issued API key gets today, absent real payment/plan tiers yet.
+// scripts/create-api-key.mjs duplicates these two numbers rather than
+// importing this file (a plain .mjs script importing a TS module that
+// itself has no server-only dependencies would work, but duplicating two
+// integers is simpler and more robust than relying on Node's ESM resolving
+// an extensionless TS import correctly outside the Next.js build).
+export const PRO_MAX_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30; // 30 days
+export const PRO_DEFAULT_RATE_LIMIT_MAX = 500; // per hour
