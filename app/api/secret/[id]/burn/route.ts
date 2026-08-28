@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
+import { snapshotStats } from "@/lib/statsSnapshot";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" };
 
@@ -26,6 +27,11 @@ export async function POST(
       { status: 404, headers: NO_STORE_HEADERS },
     );
   }
+
+  // stats:secrets_opened was already incremented atomically inside
+  // burnSecret's own Lua script (lib/redis.ts) — this just backs up the
+  // resulting count, same as the create paths do.
+  void snapshotStats().catch(() => {});
 
   return NextResponse.json(JSON.parse(raw), { headers: NO_STORE_HEADERS });
 }

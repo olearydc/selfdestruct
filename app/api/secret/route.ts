@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { RATE_LIMIT_MAX_CREATES } from "@/lib/constants";
 import { validateSecretPayload } from "@/lib/secretValidation";
+import { snapshotStats } from "@/lib/statsSnapshot";
 
 const MIN_EXPIRES_IN = 60; // 1 minute
 const MAX_EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
   // without metadata. A plain counter, no ID or timestamp attached, never
   // joined to the secret it came from.
   await redis.incr("stats:secrets_created");
+  void snapshotStats().catch(() => {});
 
   return withRateLimitCookie(NextResponse.json({ id }, { headers: NO_STORE_HEADERS }));
 }

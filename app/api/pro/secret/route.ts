@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { hashApiKey, lookupApiKey } from "@/lib/apiKeys";
 import { validateSecretPayload, validateSlug } from "@/lib/secretValidation";
+import { snapshotStats } from "@/lib/statsSnapshot";
 
 const MIN_EXPIRES_IN = 60; // 1 minute — same floor as the free tier
 const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
@@ -118,6 +119,7 @@ export async function POST(request: NextRequest) {
     );
   }
   await redis.incr("stats:secrets_created");
+  void snapshotStats().catch(() => {});
 
   return NextResponse.json({ id }, { headers: NO_STORE_HEADERS });
 }

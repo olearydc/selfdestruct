@@ -1,13 +1,18 @@
 import { config } from "dotenv";
 import Redis from "ioredis";
 import { expect, test } from "@playwright/test";
+import { withStatsLock } from "./helpers/statsLock";
 
 config({ path: ".env.local", quiet: true });
 
 // stats:secrets_created / stats:secrets_opened are global, shared counters
 // (see lib/redis.ts and app/api/secret/route.ts) — other tests running in
 // parallel increment them too, so this only asserts our own action's
-// contribution landed (>= before + 1), not an exact value.
+// contribution landed (>= before + 1), not an exact value. Wrapped in
+// withStatsLock so this monotonic assumption can't be violated by a
+// genuinely destructive test (a reset, or a simulated-wipe test)
+// temporarily setting the counters to an arbitrary lower value in the
+// middle of this test's before/after window — see tests/helpers/statsLock.ts.
 test("secrets_created and secrets_opened counters increment on real actions", async ({
   page,
   context,
@@ -15,30 +20,33 @@ test("secrets_created and secrets_opened counters increment on real actions", as
   const redis = new Redis(process.env.REDIS_URL as string);
   const secretText = `stats check ${Date.now()}`;
 
-  const createdBefore = Number((await redis.get("stats:secrets_created")) ?? 0);
-  const openedBefore = Number((await redis.get("stats:secrets_opened")) ?? 0);
+  await withStatsLock(redis, async () => {
+    const createdBefore = Number((await redis.get("stats:secrets_created")) ?? 0);
+    const openedBefore = Number((await redis.get("stats:secrets_opened")) ?? 0);
 
-  await page.goto("/");
-  await page.getByPlaceholder("Type it. Send it. Gone.").fill(secretText);
-  await page.getByRole("button", { name: "Create secret" }).click();
+    await page.goto("/");
+    await page.getByPlaceholder("Type it. Send it. Gone.").fill(secretText);
+    await page.getByRole("button", { name: "Create secret" }).click();
 
-  const link = page.locator(".copy-row a");
-  await expect(link).toBeVisible();
-  const href = await link.getAttribute("href");
+    const link = page.locator(".copy-row a");
+    await expect(link).toBeVisible();
+    const href = await link.getAttribute("href");
 
-  const createdAfter = Number((await redis.get("stats:secrets_created")) ?? 0);
-  expect(createdAfter).toBeGreaterThanOrEqual(createdBefore + 1);
+    const createdAfter = Number((await redis.get("stats:secrets_created")) ?? 0);
+    expect(createdAfter).toBeGreaterThanOrEqual(createdBefore + 1);
 
-  const recipientContext = await context.browser()!.newContext();
-  const recipientPage = await recipientContext.newPage();
-  await recipientPage.goto(href!);
-  await recipientPage.getByRole("button", { name: "Reveal secret" }).click();
-  await expect(recipientPage.locator("pre")).toHaveText(secretText);
+    const recipientContext = await context.browser()!.newContext();
+    const recipientPage = await recipientContext.newPage();
+    await recipientPage.goto(href!);
+    await recipientPage.getByRole("button", { name: "Reveal secret" }).click();
+    await expect(recipientPage.locator("pre")).toHaveText(secretText);
 
-  const openedAfter = Number((await redis.get("stats:secrets_opened")) ?? 0);
-  expect(openedAfter).toBeGreaterThanOrEqual(openedBefore + 1);
+    const openedAfter = Number((await redis.get("stats:secrets_opened")) ?? 0);
+    expect(openedAfter).toBeGreaterThanOrEqual(openedBefore + 1);
 
-  await recipientContext.close();
+    await recipientContext.close();
+  });
+
   await redis.quit();
 });
 

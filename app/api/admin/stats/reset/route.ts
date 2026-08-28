@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { isAdminAuthorized } from "@/lib/adminAuth";
+import { snapshotStats } from "@/lib/statsSnapshot";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 
@@ -11,6 +12,12 @@ export async function POST(request: NextRequest) {
   }
 
   await Promise.all([redis.set("stats:secrets_created", "0"), redis.set("stats:secrets_opened", "0")]);
+
+  // Must be awaited, not fire-and-forget, unlike every other call site:
+  // restoreStatsFromSnapshot only ever raises a value, never lowers it, so
+  // if the on-disk snapshot still held the pre-reset numbers when the
+  // server next restarted, it would silently undo this reset.
+  await snapshotStats().catch(() => {});
 
   return NextResponse.json({ ok: true }, { headers: NO_STORE_HEADERS });
 }

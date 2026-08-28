@@ -43,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev/test fallback for STATS_SNAPSHOT_PATH (see lib/statsSnapshot.ts)
+.stats-snapshot.json
+.stats-snapshot-test-*.json

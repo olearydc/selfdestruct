@@ -6,6 +6,10 @@ config({ path: ".env.local", quiet: true });
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
+  // Slightly above the 30s default: a handful of tests share a Redis-backed
+  // mutex over the global stats:* counters (tests/helpers/statsLock.ts) and
+  // can queue behind each other under full parallelism.
+  timeout: 45_000,
   reporter: "list",
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
