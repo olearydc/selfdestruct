@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isAdminAuthorized } from "@/lib/adminAuth";
 
 // Strict, nonce-based CSP applied to every page. The create/reveal pages
 // need this because they handle plaintext (before encryption, after
@@ -18,7 +19,28 @@ import type { NextRequest } from "next/server";
 // Cache-Control and Referrer-Policy are set here too, not just
 // next.config.ts headers() — Next.js overrides a page-level Cache-Control
 // set via headers() for dynamically rendered routes, but not one set here.
+// The private operator-only stats page (app/admin/stats) and its reset
+// endpoint (app/api/admin/stats/reset) are the one part of this app gated
+// behind a credential — everything else is deliberately account-free. HTTP
+// Basic Auth, checked here rather than per-route, so a route can never be
+// added under /admin later and forget the check: the matcher below covers
+// the whole subtree. ADMIN_PASSWORD must be set in the deploy
+// environment — with it unset, /admin is refused entirely rather than
+// left open, since an unset check is a worse failure mode than a
+// locked-out operator.
+function unauthorized() {
+  return new NextResponse("Authentication required.", {
+    status: 401,
+    headers: { "WWW-Authenticate": 'Basic realm="admin", charset="UTF-8"' },
+  });
+}
+
 export function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path.startsWith("/admin") || path.startsWith("/api/admin")) {
+    if (!isAdminAuthorized(request.headers.get("authorization"))) return unauthorized();
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
@@ -50,5 +72,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/s/:id", "/info", "/safety"],
+  matcher: ["/", "/s/:id", "/info", "/safety", "/admin/:path*", "/api/admin/:path*"],
 };
