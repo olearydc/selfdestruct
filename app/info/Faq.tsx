@@ -14,6 +14,10 @@ const FAQ_ITEMS = [
     a: "AES-256-GCM, generated and run through your browser's built-in Web Crypto API — not a library we wrote ourselves. Every secret gets its own one-time key; nothing is ever reused across secrets. The full implementation is public — see \"Verify it yourself\" below rather than take our word for it.",
   },
   {
+    q: "Is this protected against quantum computers?",
+    a: "The connection between your browser and our server already is — it uses post-quantum hybrid key exchange (ML-KEM), confirmed with a real test against the live site, not just a setting we assume is on. That protects the scrambled data in transit from a \"harvest now, decrypt later\" attack. It doesn't extend to however you send the link itself (text, email, chat) — that's a channel we have no part in and can't control, so its own security depends on whatever app you used to send it.",
+  },
+  {
     q: "What happens after it's opened?",
     a: "It's permanently deleted from the server in the same atomic step as the reveal, not on a delay and not as a separate cleanup job. There's no way to view it a second time, including by us — a second visit to the same link gets \"no longer exists,\" not a cached copy.",
   },

@@ -105,6 +105,40 @@ test("malformed secret ID returns a clean 404, not a server error", async ({ req
   }
 });
 
+test("two simultaneous burn attempts on the same secret: only one succeeds", async ({
+  page,
+  request,
+}) => {
+  const secretText = `race test ${Date.now()}`;
+
+  // 1. Create a secret, get the link.
+  await page.goto("/");
+  await page.getByPlaceholder("Type it. Send it. Gone.").fill(secretText);
+  await page.getByRole("button", { name: "Create secret link" }).click();
+  const link = await page.locator(".copy-row a").getAttribute("href");
+  expect(link).toBeTruthy();
+  const id = new URL(link!).pathname.split("/").pop();
+
+  // 2. Fire two burn requests at the same secret ID concurrently — both
+  // representing a client that has already decrypted successfully and is
+  // now calling the burn endpoint, the way a real double-open race would.
+  const [first, second] = await Promise.all([
+    request.post(`/api/secret/${id}/burn`, { data: {} }),
+    request.post(`/api/secret/${id}/burn`, { data: {} }),
+  ]);
+
+  // 3. Exactly one succeeds (200, status "ok"); the other finds the key
+  // already gone (404) — proving the atomic get-and-delete in
+  // lib/redis.ts's burnSecret script actually closes the race, not just
+  // that a sequential DEL follows a sequential GET.
+  const statuses = [first.status(), second.status()].sort();
+  expect(statuses).toEqual([200, 404]);
+
+  const winner = first.status() === 200 ? first : second;
+  const body = await winner.json();
+  expect(body.status).toBe("ok");
+});
+
 test("oversized payload rejected server-side", async ({ request }) => {
   const oversized = "x".repeat(200_000); // well over the 100KB cap
 
